@@ -5,16 +5,20 @@
 mod registry {
     use ink::storage::Mapping;
     use ink::prelude::string::String;
+    use ink::prelude::vec::Vec;
     use openbrush::{
         traits::{
             Storage,
         },
+        contracts::access_control::*,
     };
     use meta_tx_context::*;
 
     #[ink(storage)]
     #[derive(Default, Storage)]
     pub struct Registry {
+        #[storage_field]
+        access_control: access_control::Data,
         #[storage_field]
         meta_tx_context: meta_tx_context::Data,
 
@@ -31,19 +35,16 @@ mod registry {
         NameNotRegistered,
     }
 
-    impl meta_tx_context::MetaTxContext for Registry {}
-    impl meta_tx_context::Internal for Registry {}
+    impl AccessControl for Registry {}
+    impl MetaTxContext for Registry {}
 
     impl Registry {
         #[ink(constructor)]
         pub fn new(trusted_forwarder: AccountId) -> Self {
-            Self {
-                meta_tx_context: meta_tx_context::Data {
-                    trusted_forwarder: Some(trusted_forwarder),
-                },
-                names: Mapping::new(),
-                owners: Mapping::new(),
-            }
+            let mut _instance = Self::default();
+            _instance._init_with_admin(_instance.env().caller());
+            _instance.set_trusted_forwarder(trusted_forwarder).expect("Should have MANAGER role");
+            _instance
         }
 
         #[ink(message)]
@@ -143,6 +144,27 @@ mod registry {
 
             let mut registry = Registry::new([0x0; 32].into());
             assert_eq!(registry.unregister(vec![]), Err(Error::NameNotRegistered));
+        }
+
+        #[ink::test]
+        fn set_trusted_forwarder_by_admin_works() {
+            let accounts = default_accounts();
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
+
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.set_trusted_forwarder([0x1; 32].into()), Ok(()));
+            assert_eq!(registry.get_trusted_forwarder(), Some(AccountId::from([0x1; 32])));
+        }
+
+        #[ink::test]
+        fn set_trusted_forwarder_by_non_admin_fails() {
+            let accounts = default_accounts();
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
+
+            let mut registry = Registry::new([0x0; 32].into());
+
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.bob);
+            assert_eq!(registry.set_trusted_forwarder([0x1; 32].into()), Err(AccessControlError::MissingRole));
         }
     }
 }

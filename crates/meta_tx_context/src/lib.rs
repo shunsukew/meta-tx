@@ -11,6 +11,13 @@ use openbrush::{
         Storage,
     },
 };
+use ink::prelude::vec::Vec;
+use openbrush::{
+    modifiers,
+    contracts::access_control::*
+};
+
+pub const MANAGER: RoleType = ink::selector_id!("MANAGER");
 
 pub const STORAGE_KEY: u32 = openbrush::storage_unique_key!(MetaTxContextData);
 
@@ -22,19 +29,16 @@ pub struct Data {
 
 impl<T> MetaTxContext for T
 where
-    T: Storage<Data>,
+    T: Storage<Data>  + Storage<access_control::Data>
 {
     default fn get_trusted_forwarder(&self) -> Option<AccountId> {
         self.data::<Data>().trusted_forwarder
     }
-}
 
-impl<T> Internal for T
-where
-    T: Storage<Data>
-{
-    default fn _set_trusted_forwarder(&mut self, forwarder: AccountId) {
+    #[modifiers(only_role(DEFAULT_ADMIN_ROLE))]
+    default fn set_trusted_forwarder(&mut self, forwarder: AccountId) -> Result<(), AccessControlError> {
         self.data::<Data>().trusted_forwarder = Some(forwarder);
+        Ok(())
     }
 
     default fn _caller(&self, data: Vec<u8>) -> AccountId {
