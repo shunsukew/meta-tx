@@ -1,12 +1,27 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(min_specialization)]
 
 #[ink::contract]
 mod registry {
     use ink::storage::Mapping;
     use ink::prelude::string::String;
+    use ink::prelude::vec::Vec;
+    use openbrush::{
+        traits::{
+            Storage,
+        },
+        contracts::access_control::*,
+    };
+    use meta_tx_context::*;
 
     #[ink(storage)]
+    #[derive(Default, Storage)]
     pub struct Registry {
+        #[storage_field]
+        access_control: access_control::Data,
+        #[storage_field]
+        meta_tx_context: meta_tx_context::Data,
+
         names: Mapping<AccountId, String>,
         owners: Mapping<String, AccountId>,
     }
@@ -20,21 +35,24 @@ mod registry {
         NameNotRegistered,
     }
 
+    impl AccessControl for Registry {}
+    impl MetaTxContext for Registry {}
+
     impl Registry {
         #[ink(constructor)]
-        pub fn new() -> Self {
-            Self {
-                names: Mapping::new(),
-                owners: Mapping::new(),
-            }
+        pub fn new(trusted_forwarder: AccountId) -> Self {
+            let mut _instance = Self::default();
+            _instance._init_with_admin(_instance.env().caller());
+            _instance.set_trusted_forwarder(trusted_forwarder).expect("Should have MANAGER role");
+            _instance
         }
 
         #[ink(message)]
-        pub fn register(&mut self, name: String) -> Result<(), Error> {
+        pub fn register(&mut self, name: String, data: Vec<u8>) -> Result<(), Error> {
             if self.owners.contains(name.clone()) {
                 return Err(Error::NameTaken);
             };
-            let caller = self.env().caller();
+            let caller = self._caller(data);
             if self.names.contains(caller) {
                 return Err(Error::AlreadyRegistered);
             }
@@ -46,8 +64,8 @@ mod registry {
         }
 
         #[ink(message)]
-        pub fn unregister(&mut self) -> Result<(), Error> {
-            let caller = self.env().caller();
+        pub fn unregister(&mut self, data: Vec<u8>) -> Result<(), Error> {
+            let caller = self._caller(data);
             let name = self.names.get(caller).ok_or(Error::NameNotRegistered)?;
 
             self.names.remove(&caller);
@@ -80,8 +98,8 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.register(String::from("alice")), Ok(()));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.register(String::from("alice"), vec![]), Ok(()));
             assert_eq!(registry.get_owner(String::from("alice")), Some(accounts.alice));
             assert_eq!(registry.get_name(accounts.alice), Some(String::from("alice")));
         }
@@ -91,9 +109,9 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.register(String::from("alice")), Ok(()));
-            assert_eq!(registry.register(String::from("alice_2")), Err(Error::AlreadyRegistered));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.register(String::from("alice"), vec![]), Ok(()));
+            assert_eq!(registry.register(String::from("alice_2"), vec![]), Err(Error::AlreadyRegistered));
         }
 
         #[ink::test]
@@ -101,11 +119,11 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.register(String::from("test")), Ok(()));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.register(String::from("test"), vec![]), Ok(()));
 
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.bob);
-            assert_eq!(registry.register(String::from("test")), Err(Error::NameTaken));
+            assert_eq!(registry.register(String::from("test"), vec![]), Err(Error::NameTaken));
         }
 
         #[ink::test]
@@ -113,9 +131,9 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.register(String::from("alice")), Ok(()));
-            assert_eq!(registry.unregister(), Ok(()));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.register(String::from("alice"), vec![]), Ok(()));
+            assert_eq!(registry.unregister(vec![]), Ok(()));
             assert_eq!(registry.get_name(accounts.alice), None);
         }
 
@@ -124,8 +142,29 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.unregister(), Err(Error::NameNotRegistered));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.unregister(vec![]), Err(Error::NameNotRegistered));
+        }
+
+        #[ink::test]
+        fn set_trusted_forwarder_by_admin_works() {
+            let accounts = default_accounts();
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
+
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.set_trusted_forwarder([0x1; 32].into()), Ok(()));
+            assert_eq!(registry.get_trusted_forwarder(), Some(AccountId::from([0x1; 32])));
+        }
+
+        #[ink::test]
+        fn set_trusted_forwarder_by_non_admin_fails() {
+            let accounts = default_accounts();
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
+
+            let mut registry = Registry::new([0x0; 32].into());
+
+            ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.bob);
+            assert_eq!(registry.set_trusted_forwarder([0x1; 32].into()), Err(AccessControlError::MissingRole));
         }
     }
 }
