@@ -1,0 +1,19 @@
+{
+  "name": "meta-tx",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:shunsukew/meta-tx.git",
+  "author": "Shunsuke Watanabe <shunsukesan.tech@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@727-ventures/typechain-compiler": "1.0.0-beta.1",
+    "@727-ventures/typechain-types": "^1.0.0-beta.1",
+    "@polkadot/api": "^10.2.1",
+    "@polkadot/api-contract": "^10.2.1",
+    "typescript": "^5.0.3"
+  },
+  "scripts": {
+    "compile": "npx @727-ventures/typechain-compiler --config ./typechain-compiler-config.json",
+    "test": ""
+  }
+}

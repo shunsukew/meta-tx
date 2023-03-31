@@ -2,3 +2,7 @@
 
 **/target/
 /artifacts/
+
+yarn-error.log
+
+node_modules
