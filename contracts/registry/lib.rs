@@ -97,8 +97,8 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.register(String::from("alice")), Ok(()));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.register(String::from("alice"), vec![]), Ok(()));
             assert_eq!(registry.get_owner(String::from("alice")), Some(accounts.alice));
             assert_eq!(registry.get_name(accounts.alice), Some(String::from("alice")));
         }
@@ -108,9 +108,9 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.register(String::from("alice")), Ok(()));
-            assert_eq!(registry.register(String::from("alice_2")), Err(Error::AlreadyRegistered));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.register(String::from("alice"), vec![]), Ok(()));
+            assert_eq!(registry.register(String::from("alice_2"), vec![]), Err(Error::AlreadyRegistered));
         }
 
         #[ink::test]
@@ -118,11 +118,11 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.register(String::from("test")), Ok(()));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.register(String::from("test"), vec![]), Ok(()));
 
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.bob);
-            assert_eq!(registry.register(String::from("test")), Err(Error::NameTaken));
+            assert_eq!(registry.register(String::from("test"), vec![]), Err(Error::NameTaken));
         }
 
         #[ink::test]
@@ -130,9 +130,9 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.register(String::from("alice")), Ok(()));
-            assert_eq!(registry.unregister(), Ok(()));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.register(String::from("alice"), vec![]), Ok(()));
+            assert_eq!(registry.unregister(vec![]), Ok(()));
             assert_eq!(registry.get_name(accounts.alice), None);
         }
 
@@ -141,8 +141,8 @@ mod registry {
             let accounts = default_accounts();
             ink::env::test::set_caller::<ink::env::DefaultEnvironment>(accounts.alice);
 
-            let mut registry = Registry::new();
-            assert_eq!(registry.unregister(), Err(Error::NameNotRegistered));
+            let mut registry = Registry::new([0x0; 32].into());
+            assert_eq!(registry.unregister(vec![]), Err(Error::NameNotRegistered));
         }
     }
 }
