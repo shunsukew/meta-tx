@@ -1,12 +1,23 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(min_specialization)]
 
 #[ink::contract]
 mod registry {
     use ink::storage::Mapping;
     use ink::prelude::string::String;
+    use openbrush::{
+        traits::{
+            Storage,
+        },
+    };
+    use meta_tx_context::*;
 
     #[ink(storage)]
+    #[derive(Default, Storage)]
     pub struct Registry {
+        #[storage_field]
+        meta_tx_context: meta_tx_context::Data,
+
         names: Mapping<AccountId, String>,
         owners: Mapping<String, AccountId>,
     }
@@ -20,21 +31,27 @@ mod registry {
         NameNotRegistered,
     }
 
+    impl meta_tx_context::MetaTxContext for Registry {}
+    impl meta_tx_context::Internal for Registry {}
+
     impl Registry {
         #[ink(constructor)]
-        pub fn new() -> Self {
+        pub fn new(trusted_forwarder: AccountId) -> Self {
             Self {
+                meta_tx_context: meta_tx_context::Data {
+                    trusted_forwarder: Some(trusted_forwarder),
+                },
                 names: Mapping::new(),
                 owners: Mapping::new(),
             }
         }
 
         #[ink(message)]
-        pub fn register(&mut self, name: String) -> Result<(), Error> {
+        pub fn register(&mut self, name: String, data: Vec<u8>) -> Result<(), Error> {
             if self.owners.contains(name.clone()) {
                 return Err(Error::NameTaken);
             };
-            let caller = self.env().caller();
+            let caller = self._caller(data);
             if self.names.contains(caller) {
                 return Err(Error::AlreadyRegistered);
             }
@@ -46,8 +63,8 @@ mod registry {
         }
 
         #[ink(message)]
-        pub fn unregister(&mut self) -> Result<(), Error> {
-            let caller = self.env().caller();
+        pub fn unregister(&mut self, data: Vec<u8>) -> Result<(), Error> {
+            let caller = self._caller(data);
             let name = self.names.get(caller).ok_or(Error::NameNotRegistered)?;
 
             self.names.remove(&caller);
