@@ -83,54 +83,54 @@ describe("meta tx test", () => {
     ).to.be.equal(name);
   });
 
-  // it("Verify works", async () => {
-    // const keyring = new Keyring({ type: 'ecdsa' });
-    // const alice = keyring.addFromUri('//Alice');
+  it("Verify works", async () => {
+    const keyring = new Keyring({ type: 'ecdsa' });
+    const alice = keyring.addFromUri('//Alice');
 
-    // let from: Uint8Array = alice.addressRaw;
-    // let callee: Uint8Array = keyring.decodeAddress(registry.address);
-    // let selector: number[] = [34, 155, 85, 63]; // register
-    // let input: number[] = [];
-    // let transferredValue: number = 0;
-    // let gasLimit: number = 1000000000;
-    // let allowReentry: boolean = false;
-    // let nonce: number = 0;
-    // let expirationTimeSeconds: number = Date.now() + 100000000;
+    let from: Uint8Array = alice.addressRaw;
+    let callee: Uint8Array = keyring.decodeAddress(registry.address);
+    let selector: number[] = [34, 155, 85, 63]; // register
+    let input: number[] = [];
+    let transferredValue: number = 0;
+    let gasLimit: number = 1000000000;
+    let allowReentry: boolean = false;
+    let nonce: number = 0;
+    let expirationTimeSeconds: number = Date.now() + 100000000;
 
-    // let encoded_name = $.str.encode("test");
-    // input = input.concat(Array.from(encoded_name));
+    let encoded_name = $.str.encode("test");
+    input = input.concat(Array.from(encoded_name));
 
-    // // Transaction to call the flip() fn in the Flipper contract
-    // let transaction: Transaction = {
-        // from: Array.from(from),
-        // callee: Array.from(callee),
-        // selector: selector,
-        // input: input,
-        // transferredValue: transferredValue,
-        // gasLimit: gasLimit,
-        // allowReentry: allowReentry,
-        // nonce: nonce,
-        // expirationTimeSeconds: expirationTimeSeconds
-    // }
+    // Transaction to call the flip() fn in the Flipper contract
+    let transaction: Transaction = {
+        from: Array.from(from),
+        callee: Array.from(callee),
+        selector: selector,
+        input: input,
+        transferredValue: transferredValue,
+        gasLimit: gasLimit,
+        allowReentry: allowReentry,
+        nonce: nonce,
+        expirationTimeSeconds: expirationTimeSeconds
+    }
 
-    // let transaction_for_encoding = {
-        // from: from,
-        // callee: callee,
-        // selector: Uint8Array.from(selector),
-        // input: Uint8Array.from(input),
-        // transferredValue: BigInt(transferredValue),
-        // gasLimit: BigInt(gasLimit),
-        // allowReentry: transaction.allowReentry,
-        // nonce: BigInt(nonce),
-        // expirationTimeSeconds: BigInt(expirationTimeSeconds)
-    // }
+    let transaction_for_encoding = {
+        from: from,
+        callee: callee,
+        selector: Uint8Array.from(selector),
+        input: Uint8Array.from(input),
+        transferredValue: BigInt(transferredValue),
+        gasLimit: BigInt(gasLimit),
+        allowReentry: transaction.allowReentry,
+        nonce: BigInt(nonce),
+        expirationTimeSeconds: BigInt(expirationTimeSeconds)
+    }
 
-    // let encoded_transaction = $transaction_codec.encode(transaction_for_encoding);
-    // let signature = alice.sign(encoded_transaction);
+    let encoded_transaction = $transaction_codec.encode(transaction_for_encoding);
+    let signature = alice.sign(encoded_transaction);
 
-    // let res = await forwarder.query.verfiy(transaction, Array.from(signature));
-    // expect(res.value.ok?.err).to.be.equal(undefined);
-  // })
+    let res = await forwarder.query.verfiy(transaction, Array.from(signature));
+    expect(res.value.ok?.err).to.be.equal(undefined);
+  })
 
   // With meta transaction
   it("Register meta tx works", async () => {
