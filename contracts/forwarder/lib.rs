@@ -155,7 +155,7 @@ mod forwarder {
         #[ink(message, payable)]
         pub fn execute(&mut self, req: Transaction, signature: [u8; 65]) -> Result<(), Error> {
             // Signature must be correct
-            let _ = self.verfiy(req.clone(), signature.clone());
+            self.verfiy(req.clone(), signature.clone())?;
 
             // Assert that the correct amount of tokens were sent to this contract instance with this fn call
             if self.env().transferred_value() != req.transferred_value {
@@ -176,14 +176,16 @@ mod forwarder {
             // Run the transaction
             // Forwarder contract add original 32bytes caller account_id as extra input bytes,
             // so that callee contract can extract original signer of the transaction.
-            let signer = self.env().caller();
+            let input = ExecutionInput::new(req.selector.into()).push_arg(CallInput(&req.input)).push_arg(req.from.encode());
+            ink::env::debug_println!("{:?}", input.encode());
+
             let result = build_call::<<Self as ::ink::env::ContractEnv>::Env>()
                 .call(req.callee)
                 .gas_limit(req.gas_limit)
                 .transferred_value(req.transferred_value)
                 .call_flags(CallFlags::default().set_allow_reentry(req.allow_reentry))
                 .exec_input(
-                    ExecutionInput::new(req.selector.into()).push_arg(CallInput(&req.input)).push_arg(&signer),
+                    input
                 )
                 .returns::<()>()
                 .try_invoke();
@@ -191,7 +193,7 @@ mod forwarder {
             match result {
                 Ok(Ok(_)) => {
                     self.env().emit_event(Executed {
-                        caller: caller,
+                        caller,
                         callee: req.callee,
                         encoded_transaction: req,
                     });
