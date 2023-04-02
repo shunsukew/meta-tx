@@ -111,7 +111,6 @@ mod forwarder {
 
             let encoded_msg: Vec<u8> = req.encode();
             ink::env::debug_println!("Encoded message Vec<u8>: {:?}", encoded_msg);
-            // let message_hash = Keccak256::digest(encoded_msg).to_vec();
             let message_hash = Self::blake2x256_hash(encoded_msg);
             ink::env::debug_println!("32 byte message hash: {:?}", message_hash);
 
@@ -135,18 +134,20 @@ mod forwarder {
                     if expected_nonce != req.nonce {
                         return Err(Error::IncorrectNonce);
                     }
+
                     if signer != caller {
                         return Err(Error::IncorrectSignature);
-                    } else {
-                        ink::env::debug_println!(
-                            "MATCH\nCaller {:?}\nSigner: {:?}",
-                            caller,
-                            signer,
-                        );
-                        return Ok(());
                     }
+
+                    ink::env::debug_println!(
+                        "MATCH\nCaller {:?}\nSigner: {:?}",
+                        caller,
+                        signer,
+                    );
+
+                    Ok(())
                 }
-                Err(_) => return Err(Error::IncorrectSignature),
+                Err(_) => Err(Error::IncorrectSignature),
             }
         }
 
@@ -174,18 +175,14 @@ mod forwarder {
             self.nonces.insert(caller, &updated_nonce);
 
             // Run the transaction
-            // Forwarder contract add original 32bytes caller account_id as extra input bytes,
-            // so that callee contract can extract original signer of the transaction.
-            let input = ExecutionInput::new(req.selector.into()).push_arg(CallInput(&req.input)).push_arg(req.from.encode());
-            ink::env::debug_println!("{:?}", input.encode());
-
             let result = build_call::<<Self as ::ink::env::ContractEnv>::Env>()
                 .call(req.callee)
                 .gas_limit(req.gas_limit)
                 .transferred_value(req.transferred_value)
                 .call_flags(CallFlags::default().set_allow_reentry(req.allow_reentry))
                 .exec_input(
-                    input
+                    // Add signer's account_id as extra input bytes
+                    ExecutionInput::new(req.selector.into()).push_arg(CallInput(&req.input)).push_arg(req.from.encode())
                 )
                 .returns::<()>()
                 .try_invoke();
@@ -197,14 +194,14 @@ mod forwarder {
                         callee: req.callee,
                         encoded_transaction: req,
                     });
-                    return Ok(());
+                    Ok(())
                 }
                 Err(e) => {
                     ink::env::debug_println!("Transaction error: {:?}", e);
-                    return Err(Error::TransactionFailed);
+                    Err(Error::TransactionFailed)
                 }
-                _ => return Err(Error::TransactionFailed),
-            };
+                _ => Err(Error::TransactionFailed)
+            }
         }
 
         /// Convert a compressed 33 byte ECDSA public key into a 32 byte Substrate address
