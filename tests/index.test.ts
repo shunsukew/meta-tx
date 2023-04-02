@@ -153,7 +153,8 @@ describe("meta tx test", () => {
     let nonce: number = 0;
     let expirationTimeSeconds: number = Date.now() + 100000000;
 
-    let encoded_name = $.str.encode("test");
+    const name = "test";
+    let encoded_name = $.str.encode(name);
     input = input.concat(Array.from(encoded_name));
 
     // Transaction to call the flip() fn in the Flipper contract
@@ -197,6 +198,8 @@ describe("meta tx test", () => {
       })
     ).to.eventually.be.fulfilled;
 
-    // TODO: Check registered name
+    expect(
+      (await registry.query.getName(ecdsa_alice.address)).value.ok?.toString()
+    ).to.be.equal(name);
   })
 });
