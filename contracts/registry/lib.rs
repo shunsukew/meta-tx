@@ -49,6 +49,8 @@ mod registry {
 
         #[ink(message)]
         pub fn register(&mut self, name: String, data: Vec<u8>) -> Result<(), Error> {
+            ink::env::debug_println!("Register called");
+
             if self.owners.contains(name.clone()) {
                 return Err(Error::NameTaken);
             };
@@ -60,6 +62,14 @@ mod registry {
             self.names.insert(caller, &name);
             self.owners.insert(name, &caller);
 
+            Ok(())
+        }
+
+        #[ink(message)]
+        pub fn dummy(&mut self, data: Vec<u8>) -> Result<(), Error> {
+            ink::env::debug_println!("Dummy called");
+            let caller = self._caller(data);
+            ink::env::debug_println!("Caller: {:?}", caller);
             Ok(())
         }
 

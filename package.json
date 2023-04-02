@@ -10,10 +10,19 @@
     "@727-ventures/typechain-types": "^1.0.0-beta.1",
     "@polkadot/api": "^10.2.1",
     "@polkadot/api-contract": "^10.2.1",
+    "@types/chai": "^4.3.4",
+    "@types/chai-as-promised": "^7.1.5",
+    "@types/mocha": "^10.0.1",
+    "chai": "^4.3.7",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^10.2.0",
+    "mocha-suppress-logs": "^0.3.1",
+    "scale-codec": "^0.11.2",
+    "ts-mocha": "^10.0.0",
     "typescript": "^5.0.3"
   },
   "scripts": {
     "compile": "npx @727-ventures/typechain-compiler --config ./typechain-compiler-config.json",
-    "test": ""
+    "test": "mocha --forbid-only -r ts-node/register \"tests/*.test.ts\""
   }
 }
