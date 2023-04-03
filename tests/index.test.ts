@@ -16,9 +16,6 @@ const wsProvider = new WsProvider("ws://127.0.0.1:9944");
 // Create a keyring instance
 const keyring = new Keyring({ type: "sr25519" });
 
-const EMPTY_ADDRESS = "5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM";
-
-
 describe("meta tx test", () => {
   let forwarder: ForwarderContract;
   let registry: RegistryContract;

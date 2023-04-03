@@ -107,26 +107,13 @@ mod forwarder {
         /// Verifies that a transaction matches its supplied signature.
         #[ink(message)]
         pub fn verfiy(&self, req: Transaction, signature: [u8; 65]) -> Result<(), Error> {
-            ink::env::debug_println!("req.callee: {:?}", req.callee);
-
             let encoded_msg: Vec<u8> = req.encode();
-            ink::env::debug_println!("Encoded message Vec<u8>: {:?}", encoded_msg);
             let message_hash = Self::blake2x256_hash(encoded_msg);
-            ink::env::debug_println!("32 byte message hash: {:?}", message_hash);
-
             match self.env().ecdsa_recover(&signature, &message_hash) {
                 Ok(pub_key) => {
                     // Match recovered pub_key with caller
                     let caller = req.from;
                     let signer = Self::to_default_account_id(pub_key);
-
-                    ink::env::debug_println!(
-                        "pub key: {:?}\ncaller: {:?}\nsigner: {:?}",
-                        pub_key,
-                        caller,
-                        signer
-                    );
-
                     let expected_nonce = self.get_nonce(caller);
 
                     // Is the message signed by the same account that sent it?
@@ -138,12 +125,6 @@ mod forwarder {
                     if signer != caller {
                         return Err(Error::IncorrectSignature);
                     }
-
-                    ink::env::debug_println!(
-                        "MATCH\nCaller {:?}\nSigner: {:?}",
-                        caller,
-                        signer,
-                    );
 
                     Ok(())
                 }
@@ -196,8 +177,7 @@ mod forwarder {
                     });
                     Ok(())
                 }
-                Err(e) => {
-                    ink::env::debug_println!("Transaction error: {:?}", e);
+                Err(_) => {
                     Err(Error::TransactionFailed)
                 }
                 _ => Err(Error::TransactionFailed)
