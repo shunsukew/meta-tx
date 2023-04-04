@@ -96,7 +96,7 @@ mod flipper {
         /// We test a simple use case of our contract.
         #[ink::test]
         fn it_works() {
-            let mut flipper = Flipper::new(false);
+            let mut flipper = Flipper::new([0x0; 32].into(), false);
             assert_eq!(flipper.get(), false);
             flipper.flip();
             assert_eq!(flipper.get(), true);
