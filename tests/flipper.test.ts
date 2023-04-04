@@ -98,7 +98,7 @@ describe("Flipper meta tx test", () => {
 
     let from: Uint8Array = ecdsa_alice.addressRaw;
     let callee: Uint8Array = keyring.decodeAddress(flipper.address);
-    let selector: number[] = [238, 188, 90, 93]; // flip [99, 58, 165, 81], flip_meta_context: [238, 188, 90, 93]
+    let selector: number[] = [99, 58, 165, 81]; // flip [99, 58, 165, 81], flip_meta_context: [238, 188, 90, 93]
     let input: number[] = [];
     let transferredValue: number = 0;
     let gasLimit: number = 1000000000;
