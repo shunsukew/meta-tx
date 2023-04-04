@@ -163,6 +163,7 @@ mod forwarder {
                 .call_flags(CallFlags::default().set_allow_reentry(req.allow_reentry))
                 .exec_input(
                     // Add signer's account_id as extra input bytes
+                    // SCALE encoded
                     ExecutionInput::new(req.selector.into()).push_arg(CallInput(&req.input)).push_arg(req.from.encode())
                 )
                 .returns::<()>()

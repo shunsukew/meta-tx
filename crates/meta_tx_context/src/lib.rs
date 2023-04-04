@@ -41,13 +41,13 @@ where
         Ok(())
     }
 
-    default fn _caller(&self, data: Vec<u8>) -> AccountId {
+    default fn _caller(&self, data: Vec<u8>) -> Result<AccountId, Error> {
         let caller = Self::env().caller();
         if let Some(trusted_forwarder) = self.data::<Data>().trusted_forwarder {
             if caller == trusted_forwarder {
-                return AccountId::try_from(data.as_slice()).unwrap();
+                return AccountId::try_from(data.as_slice()).map_err(|_| Error::RecoverAccountIdFailed);
             }
         }
-        caller
+        Ok(caller)
     }
 }

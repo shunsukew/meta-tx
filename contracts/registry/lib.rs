@@ -33,6 +33,13 @@ mod registry {
         NameTaken,
         AlreadyRegistered,
         NameNotRegistered,
+        MetaTxContextError(meta_tx_context::Error),
+    }
+
+    impl From<meta_tx_context::Error> for Error {
+        fn from(err: meta_tx_context::Error) -> Self {
+            Error::MetaTxContextError(err)
+        }
     }
 
     impl AccessControl for Registry {}
@@ -54,7 +61,7 @@ mod registry {
             if self.owners.contains(name.clone()) {
                 return Err(Error::NameTaken);
             };
-            let caller = self._caller(data);
+            let caller = self._caller(data)?;
             if self.names.contains(caller) {
                 return Err(Error::AlreadyRegistered);
             }
@@ -66,16 +73,8 @@ mod registry {
         }
 
         #[ink(message)]
-        pub fn dummy(&mut self, data: Vec<u8>) -> Result<(), Error> {
-            ink::env::debug_println!("Dummy called");
-            let caller = self._caller(data);
-            ink::env::debug_println!("Caller: {:?}", caller);
-            Ok(())
-        }
-
-        #[ink(message)]
         pub fn unregister(&mut self, data: Vec<u8>) -> Result<(), Error> {
-            let caller = self._caller(data);
+            let caller = self._caller(data)?;
             let name = self.names.get(caller).ok_or(Error::NameNotRegistered)?;
 
             self.names.remove(&caller);
